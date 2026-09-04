@@ -1,0 +1,106 @@
+{
+  "guardrailName": "EU-AI-Act-Deployer-Guardrails",
+  "description": "Bedrock Guardrails for EU AI Act compliance (Art. 9, 13, 15)",
+  "version": "1.0",
+  "topicPolicy": {
+    "topics": [
+      {
+        "name": "prohibited-content",
+        "definition": "Content that violates EU AI Act Article 5 prohibited practices",
+        "examples": [
+          "How to manipulate vulnerable populations",
+          "Social scoring algorithms",
+          "Real-time remote biometric identification"
+        ],
+        "action": "BLOCK"
+      },
+      {
+        "name": "harmful-content",
+        "definition": "Content that could cause harm to individuals or groups",
+        "examples": [
+          "How to discriminate against protected groups",
+          "How to defraud financial institutions"
+        ],
+        "action": "BLOCK"
+      }
+    ]
+  },
+  "contentPolicy": {
+    "filters": [
+      {
+        "type": "HATE",
+        "inputStrength": "HIGH",
+        "outputStrength": "HIGH",
+        "action": "BLOCK"
+      },
+      {
+        "type": "INSULTS",
+        "inputStrength": "HIGH",
+        "outputStrength": "HIGH",
+        "action": "BLOCK"
+      },
+      {
+        "type": "SEXUAL",
+        "inputStrength": "HIGH",
+        "outputStrength": "HIGH",
+        "action": "BLOCK"
+      },
+      {
+        "type": "VIOLENCE",
+        "inputStrength": "HIGH",
+        "outputStrength": "HIGH",
+        "action": "BLOCK"
+      }
+    ]
+  },
+  "sensitiveInformationPolicy": {
+    "piiEntities": [
+      {
+        "type": "EMAIL",
+        "action": "REDACT"
+      },
+      {
+        "type": "PHONE",
+        "action": "REDACT"
+      },
+      {
+        "type": "ADDRESS",
+        "action": "REDACT"
+      },
+      {
+        "type": "NAME",
+        "action": "REDACT"
+      },
+      {
+        "type": "CREDIT_CARD",
+        "action": "REDACT"
+      },
+      {
+        "type": "SOCIAL_SECURITY",
+        "action": "REDACT"
+      }
+    ]
+  },
+  "wordPolicy": {
+    "words": [
+      {
+        "text": "terrorism",
+        "action": "BLOCK"
+      },
+      {
+        "text": "money laundering",
+        "action": "BLOCK"
+      },
+      {
+        "text": "insider trading",
+        "action": "BLOCK"
+      }
+    ]
+  },
+  "contextualGroundingPolicy": {
+    "enabled": true,
+    "groundingThreshold": 0.8,
+    "relevanceThreshold": 0.7,
+    "action": "BLOCK"
+  }
+}
