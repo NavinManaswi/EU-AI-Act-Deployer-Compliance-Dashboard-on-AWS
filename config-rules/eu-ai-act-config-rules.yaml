@@ -1,0 +1,101 @@
+# AWS Config Conformance Pack: EU AI Act Deployer Controls
+# Automated rules for continuous compliance monitoring
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: EU AI Act Deployer Conformance Pack
+
+Parameters:
+  RemediationRoleArn:
+    Type: String
+    Description: ARN of the IAM role for remediation
+
+Resources:
+  SageMakerModelMonitoringEnabled:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: sagemaker-model-monitoring-enabled
+      Description: SageMaker model monitoring must be enabled for high-risk AI systems
+      Source:
+        Owner: AWS
+        SourceIdentifier: SAGEMAKER_MODEL_MONITORING_ENABLED
+      MaximumExecutionFrequency: TwentyFour_Hours
+
+  SageMakerNotebookEncryption:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: sagemaker-notebook-encryption-enabled
+      Description: SageMaker notebook instances must have encryption enabled
+      Source:
+        Owner: AWS
+        SourceIdentifier: SAGEMAKER_NOTEBOOK_ENCRYPTION_ENABLED
+      MaximumExecutionFrequency: TwentyFour_Hours
+
+  SageMakerEndpointEncryption:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: sagemaker-endpoint-encryption-enabled
+      Description: SageMaker endpoints must have encryption enabled
+      Source:
+        Owner: AWS
+        SourceIdentifier: SAGEMAKER_ENDPOINT_ENCRYPTION_ENABLED
+      MaximumExecutionFrequency: TwentyFour_Hours
+
+  SageMakerNotebookInVPC:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: sagemaker-notebook-in-vpc
+      Description: SageMaker notebook instances must be deployed within VPC
+      Source:
+        Owner: AWS
+        SourceIdentifier: SAGEMAKER_NOTEBOOK_IN_VPC
+      MaximumExecutionFrequency: TwentyFour_Hours
+
+  SageMakerNotebookNoPublicAccess:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: sagemaker-notebook-no-public-access
+      Description: SageMaker notebook instances must not have public internet access
+      Source:
+        Owner: AWS
+        SourceIdentifier: SAGEMAKER_NOTEBOOK_PUBLIC_ACCESS_DISABLED
+      MaximumExecutionFrequency: TwentyFour_Hours
+
+  BedrockGuardrailsEnabled:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: bedrock-guardrails-enabled
+      Description: Bedrock Guardrails must be enabled for all AI agents
+      Source:
+        Owner: AWS
+        SourceIdentifier: BEDROCK_GUARDRAILS_ENABLED
+      MaximumExecutionFrequency: TwentyFour_Hours
+
+  BedrockLoggingEnabled:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: bedrock-logging-enabled
+      Description: Bedrock logging must be enabled
+      Source:
+        Owner: AWS
+        SourceIdentifier: BEDROCK_LOGGING_ENABLED
+      MaximumExecutionFrequency: TwentyFour_Hours
+
+  CloudTrailEnabled:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: cloudtrail-enabled
+      Description: CloudTrail must be enabled for audit logging
+      Source:
+        Owner: AWS
+        SourceIdentifier: CLOUD_TRAIL_ENABLED
+      MaximumExecutionFrequency: TwentyFour_Hours
+
+  CloudTrailLogValidation:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: cloudtrail-log-validation-enabled
+      Description: CloudTrail log validation must be enabled
+      Source:
+        Owner: AWS
+        SourceIdentifier: CLOUD_TRAIL_LOG_VALIDATION_ENABLED
+      MaximumExecutionFrequency: TwentyFour_Hours
