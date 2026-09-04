@@ -1,0 +1,232 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: EU AI Act Deployer Compliance Dashboard
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+  QuickSightUserArn:
+    Type: String
+    Description: ARN of the QuickSight user for dashboard access
+  NotificationEmail:
+    Type: String
+    Description: Email for SNS alerts
+  ModelEndpointName:
+    Type: String
+    Description: Name of the SageMaker endpoint to monitor
+    Default: ""
+
+Globals:
+  Function:
+    Runtime: python3.11
+    MemorySize: 256
+    Timeout: 300
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        TABLE_NAME: !Ref ComplianceTable
+        BUCKET_NAME: !Ref ComplianceBucket
+        SNS_TOPIC_ARN: !Ref AlertTopic
+
+Resources:
+  # ============================================================================
+  # Storage Layer
+  # ============================================================================
+
+  ComplianceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub eu-ai-act-compliance-${AWS::AccountId}-${Environment}
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ArchiveLogs
+            Status: Enabled
+            Prefix: logs/
+            TransitionInDays: 30
+            StorageClass: GLACIER
+          - Id: DeleteOldLogs
+            Status: Enabled
+            Prefix: logs/
+            ExpirationInDays: 3650
+
+  ComplianceTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub eu-ai-act-compliance-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: systemId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: systemId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # ============================================================================
+  # Alerting Layer
+  # ============================================================================
+
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub eu-ai-act-alerts-${Environment}
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref NotificationEmail
+
+  # ============================================================================
+  # Lambda Functions
+  # ============================================================================
+
+  AggregatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../src/aggregator/
+      Handler: index.lambda_handler
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref ComplianceBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ComplianceTable
+        - SageMakerReadPolicy: {}
+        - BedrockReadPolicy: {}
+        - CloudWatchReadPolicy: {}
+      Events:
+        ScheduledScan:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+        ModelDriftEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: default
+            Pattern:
+              source:
+                - aws.sagemaker
+              detail-type:
+                - SageMaker Model Monitor Drift Detection
+
+  MonitorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../src/monitor/
+      Handler: index.lambda_handler
+      Policies:
+        - SageMakerFullAccess: {}
+        - CloudWatchFullAccess: {}
+      Events:
+        ScheduledMonitor:
+          Type: Schedule
+          Properties:
+            Schedule: rate(6 hours)
+
+  RemediatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../src/remediator/
+      Handler: index.lambda_handler
+      Policies:
+        - SageMakerFullAccess: {}
+        - BedrockFullAccess: {}
+      Events:
+        RemediationTrigger:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: default
+            Pattern:
+              source:
+                - aws.sagemaker
+              detail-type:
+                - Compliance Violation
+
+  # ============================================================================
+  # QuickSight Integration
+  # ============================================================================
+
+  QuickSightDataSource:
+    Type: AWS::QuickSight::DataSource
+    Properties:
+      DataSourceId: !Sub eu-ai-act-datasource-${Environment}
+      Name: EU AI Act Compliance Data
+      Type: ATHENA
+      DataSourceParameters:
+        AthenaParameters:
+          WorkGroup: primary
+      Credentials:
+        CredentialPair:
+          Username: !Ref QuickSightUserArn
+
+  # ============================================================================
+  # Audit Manager Framework
+  # ============================================================================
+
+  AuditManagerFramework:
+    Type: AWS::AuditManager::AssessmentFramework
+    Properties:
+      Name: !Sub EU-AI-Act-Deployer-${Environment}
+      Description: Automated evidence collection for EU AI Act deployer obligations
+      ControlSets:
+        - Name: Annex IV Documentation
+          Controls:
+            - Id: annex-iv-documentation
+              Name: Annex IV Technical Documentation
+              Description: Verify that provider holds compliant Annex IV documentation
+        - Name: Risk Management
+          Controls:
+            - Id: risk-management
+              Name: Risk Management System
+              Description: Continuous risk monitoring and mitigation
+        - Name: Data Governance
+          Controls:
+            - Id: data-governance
+              Name: Data Governance
+              Description: Data quality, lineage, and privacy controls
+        - Name: Transparency
+          Controls:
+            - Id: transparency
+              Name: Transparency and Information
+              Description: Model explanations and user disclosures
+        - Name: Human Oversight
+          Controls:
+            - Id: human-oversight
+              Name: Human Oversight
+              Description: Human review and override tracking
+        - Name: Post-Market Monitoring
+          Controls:
+            - Id: post-market-monitoring
+              Name: Post-Market Monitoring
+              Description: Continuous performance monitoring and incident reporting
+
+  # ============================================================================
+  # Outputs
+  # ============================================================================
+
+Outputs:
+  ComplianceBucketName:
+    Description: S3 bucket for compliance data
+    Value: !Ref ComplianceBucket
+  ComplianceTableName:
+    Description: DynamoDB table for compliance state
+    Value: !Ref ComplianceTable
+  AlertTopicArn:
+    Description: SNS topic for alerts
+    Value: !Ref AlertTopic
+  AggregatorFunctionArn:
+    Description: Lambda aggregator function ARN
+    Value: !GetAtt AggregatorFunction.Arn
+  QuickSightDataSourceId:
+    Description: QuickSight data source ID
+    Value: !Ref QuickSightDataSource
+  AuditManagerFrameworkId:
+    Description: Audit Manager framework ID
+    Value: !Ref AuditManagerFramework
