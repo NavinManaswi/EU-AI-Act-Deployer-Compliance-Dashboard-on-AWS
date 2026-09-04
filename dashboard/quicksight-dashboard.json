@@ -1,0 +1,168 @@
+{
+  "name": "EU AI Act Deployer Compliance Dashboard",
+  "description": "Real-time compliance dashboard for EU AI Act deployer obligations",
+  "version": "1.0",
+  "dataSources": [
+    {
+      "id": "compliance-data",
+      "type": "ATHENA",
+      "tables": [
+        {
+          "name": "compliance_aggregate",
+          "query": "SELECT system_id, timestamp, compliance_score, compliance_status, checks FROM compliance_aggregate ORDER BY timestamp DESC"
+        },
+        {
+          "name": "monitoring_metrics",
+          "query": "SELECT endpoint_name, timestamp, data_drift, bias_drift, performance_status FROM monitoring_metrics ORDER BY timestamp DESC"
+        },
+        {
+          "name": "incident_log",
+          "query": "SELECT incident_id, system_id, severity, status, created_at, resolved_at FROM incident_log ORDER BY created_at DESC"
+        }
+      ]
+    }
+  ],
+  "dashboards": [
+    {
+      "name": "Executive Summary",
+      "sheets": [
+        {
+          "name": "Compliance Overview",
+          "visuals": [
+            {
+              "type": "KPI",
+              "title": "Overall Compliance Score",
+              "field": "compliance_score",
+              "aggregation": "AVG"
+            },
+            {
+              "type": "KPI",
+              "title": "Systems in Compliance",
+              "field": "compliance_status",
+              "filter": "compliant",
+              "aggregation": "COUNT"
+            },
+            {
+              "type": "KPI",
+              "title": "Open Incidents",
+              "field": "status",
+              "filter": "open",
+              "aggregation": "COUNT"
+            },
+            {
+              "type": "PieChart",
+              "title": "Compliance Status Distribution",
+              "field": "compliance_status",
+              "aggregation": "COUNT"
+            },
+            {
+              "type": "LineChart",
+              "title": "Compliance Score Trend",
+              "xAxis": "timestamp",
+              "yAxis": "compliance_score",
+              "aggregation": "AVG"
+            }
+          ]
+        },
+        {
+          "name": "Model Health",
+          "visuals": [
+            {
+              "type": "KPI",
+              "title": "Models with Drift",
+              "field": "drift_detected",
+              "filter": "true",
+              "aggregation": "COUNT"
+            },
+            {
+              "type": "KPI",
+              "title": "Average Accuracy",
+              "field": "accuracy",
+              "aggregation": "AVG"
+            },
+            {
+              "type": "Table",
+              "title": "Model Performance Metrics",
+              "fields": ["endpoint_name", "accuracy", "precision", "recall", "f1_score", "drift_status"]
+            },
+            {
+              "type": "BarChart",
+              "title": "Bias Metrics by System",
+              "xAxis": "system_id",
+              "yAxis": "disparate_impact_ratio",
+              "threshold": 0.8
+            }
+          ]
+        },
+        {
+          "name": "Human Oversight",
+          "visuals": [
+            {
+              "type": "KPI",
+              "title": "Review Rate",
+              "field": "review_rate",
+              "aggregation": "AVG"
+            },
+            {
+              "type": "KPI",
+              "title": "Override Rate",
+              "field": "override_rate",
+              "aggregation": "AVG"
+            },
+            {
+              "type": "Table",
+              "title": "Recent Reviews",
+              "fields": ["timestamp", "system_id", "reviewer", "decision", "justification"]
+            }
+          ]
+        },
+        {
+          "name": "Annex IV Status",
+          "visuals": [
+            {
+              "type": "KPI",
+              "title": "Documentation Verified",
+              "field": "documentation_verified",
+              "filter": "true",
+              "aggregation": "COUNT"
+            },
+            {
+              "type": "Table",
+              "title": "Documentation Status",
+              "fields": ["system_id", "documentation_status", "last_verification", "expiry_date"]
+            }
+          ]
+        },
+        {
+          "name": "Incidents & Alerts",
+          "visuals": [
+            {
+              "type": "KPI",
+              "title": "Total Incidents (30 Days)",
+              "field": "incident_count",
+              "aggregation": "SUM"
+            },
+            {
+              "type": "KPI",
+              "title": "Critical Incidents",
+              "field": "severity",
+              "filter": "critical",
+              "aggregation": "COUNT"
+            },
+            {
+              "type": "Table",
+              "title": "Recent Incidents",
+              "fields": ["incident_id", "system_id", "severity", "status", "created_at", "resolved_at"]
+            },
+            {
+              "type": "BarChart",
+              "title": "Incidents by Severity",
+              "xAxis": "severity",
+              "yAxis": "count"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
