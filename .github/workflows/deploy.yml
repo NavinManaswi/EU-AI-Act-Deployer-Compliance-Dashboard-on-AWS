@@ -1,0 +1,106 @@
+name: Deploy EU AI Act Deployer Dashboard
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'infrastructure/**'
+      - 'policies/**'
+      - 'audit-framework/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate JSON files
+        run: |
+          for file in audit-framework/*.json; do
+            echo "Validating $file"
+            jq empty "$file" || exit 1
+          done
+
+      - name: Validate YAML files
+        run: |
+          for file in config-rules/*.yaml; do
+            echo "Validating $file"
+            python -c "import yaml; yaml.safe_load(open('$file'))" || exit 1
+          done
+
+      - name: Validate Python syntax
+        run: |
+          for file in src/**/*.py; do
+            echo "Validating $file"
+            python -m py_compile "$file" || exit 1
+          done
+
+      - name: Check required artifacts
+        run: |
+          REQUIRED_FILES=(
+            "infrastructure/template.yaml"
+            "src/aggregator/index.py"
+            "src/monitor/index.py"
+            "audit-framework/eu-ai-act-deployer-framework.json"
+            "dashboard/quicksight-dashboard.json"
+            "policies/guardrails/bedrock-guardrails.json"
+          )
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+          echo "✅ All required artifacts are present"
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up AWS SAM
+        uses: aws-actions/setup-sam@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Build SAM application
+        run: sam build
+
+      - name: Deploy SAM application
+        run: |
+          sam deploy \
+            --stack-name eu-ai-act-deployer-dashboard \
+            --capabilities CAPABILITY_IAM \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              NotificationEmail=${{ secrets.NOTIFICATION_EMAIL }} \
+              QuickSightUserArn=${{ secrets.QUICKSIGHT_USER_ARN }}
+
+      - name: Deploy Audit Manager framework
+        run: |
+          aws auditmanager create-assessment-framework \
+            --name "EU AI Act Deployer Framework" \
+            --description "Automated evidence collection for EU AI Act deployer obligations" \
+            --control-sets file://audit-framework/eu-ai-act-deployer-framework.json || true
