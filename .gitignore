@@ -1,0 +1,38 @@
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+*.pyc
+__pycache__/
+venv/
+env/
+.pytest_cache/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Markdown build files
+*.html
+_site/
+.bundle/
+vendor/
+
+# Sensitive files
+*.pem
+*.key
+*.crt
+.env
+.secrets
+*.secret
+
+# SAM build
+.aws-sam/
+build/
