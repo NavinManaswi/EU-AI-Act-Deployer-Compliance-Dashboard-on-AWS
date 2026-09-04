@@ -1,0 +1,14 @@
+# Jekyll Configuration for GitHub Pages
+
+theme: jekyll-theme-minimal
+
+title: EU AI Act Deployer Compliance Dashboard
+description: Continuous transparency and accountability for high-risk AI systems
+
+author:
+  name: Your Name
+  email: your.email@domain.com
+
+social:
+  linkedin: NavinManaswi
+  github: NavinManaswi
