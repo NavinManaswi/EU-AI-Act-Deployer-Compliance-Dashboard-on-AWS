@@ -1,0 +1,6 @@
+{
+  "Environment": "dev",
+  "QuickSightUserArn": "arn:aws:quicksight:us-east-1:123456789012:user/default/your-username",
+  "NotificationEmail": "your-email@example.com",
+  "ModelEndpointName": "credit-iq-endpoint"
+}
