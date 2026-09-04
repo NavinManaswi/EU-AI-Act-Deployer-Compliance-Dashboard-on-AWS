@@ -1,0 +1,198 @@
+{
+  "frameworkName": "EU AI Act Deployer Framework v1",
+  "frameworkDescription": "Automated evidence collection for EU AI Act deployer obligations under Articles 9-15, 72-73",
+  "frameworkType": "Standard",
+  "controlSets": [
+    {
+      "name": "Annex IV Documentation (Art. 11)",
+      "controls": [
+        {
+          "id": "ANNEX-IV-001",
+          "name": "Annex IV Technical Documentation",
+          "description": "Verify that the provider holds compliant Annex IV technical documentation",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_S3",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM aws_s3 WHERE bucket_name LIKE '%annex-iv%'"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ANNEX-IV-002",
+          "name": "Documentation Retention",
+          "description": "Ensure Annex IV documentation is retained for 10 years",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_S3",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM aws_s3 WHERE lifecycle_configuration.expiration_days >= 3650"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Risk Management (Art. 9)",
+      "controls": [
+        {
+          "id": "RISK-001",
+          "name": "Risk Management System",
+          "description": "Continuous risk monitoring and mitigation",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_Config",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * WHERE resourceType = 'AWS::SageMaker::MonitoringSchedule' AND resourceConfiguration.MonitoringScheduleStatus = 'Active'"
+              }
+            },
+            {
+              "sourceType": "AWS_CloudWatch",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM cloudwatch WHERE metric_name IN ('ModelDrift', 'BiasDrift')"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Data Governance (Art. 10)",
+      "controls": [
+        {
+          "id": "DATA-001",
+          "name": "Data Quality",
+          "description": "Data quality monitoring and validation",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_SageMaker",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM sagemaker_model_monitor WHERE data_quality_checks_enabled = true"
+              }
+            }
+          ]
+        },
+        {
+          "id": "DATA-002",
+          "name": "Data Lineage",
+          "description": "Data lineage tracking",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_CloudTrail",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM cloudtrail WHERE event_name LIKE '%Data%' AND event_source LIKE '%sagemaker%'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Transparency (Art. 13)",
+      "controls": [
+        {
+          "id": "TRANS-001",
+          "name": "Model Explainability",
+          "description": "Model explanations available for all decisions",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_SageMaker",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM sagemaker_endpoint WHERE explainability_enabled = true"
+              }
+            }
+          ]
+        },
+        {
+          "id": "TRANS-002",
+          "name": "User Disclosure",
+          "description": "AI system disclosure to users",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_CloudTrail",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM cloudtrail WHERE event_name LIKE '%Disclosure%'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Human Oversight (Art. 14)",
+      "controls": [
+        {
+          "id": "HUMAN-001",
+          "name": "Human Review Logging",
+          "description": "All human reviews are logged",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_CloudTrail",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM cloudtrail WHERE event_name LIKE '%Review%'"
+              }
+            }
+          ]
+        },
+        {
+          "id": "HUMAN-002",
+          "name": "Override Tracking",
+          "description": "All overrides are tracked with justification",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_CloudTrail",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM cloudtrail WHERE event_name LIKE '%Override%'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Post-Market Monitoring (Art. 72-73)",
+      "controls": [
+        {
+          "id": "PMM-001",
+          "name": "Continuous Monitoring",
+          "description": "Continuous performance monitoring",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_CloudWatch",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM cloudwatch WHERE metric_name IN ('Accuracy', 'Precision', 'Recall')"
+              }
+            }
+          ]
+        },
+        {
+          "id": "PMM-002",
+          "name": "Incident Reporting",
+          "description": "Incident detection and reporting",
+          "evidenceSources": [
+            {
+              "sourceType": "AWS_SecurityHub",
+              "sourceKeyword": {
+                "keywordInputType": "SELECT",
+                "keywordValue": "SELECT * FROM securityhub WHERE compliance_status = 'FAILED'"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
